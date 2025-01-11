@@ -61,7 +61,7 @@ const PasswordReset = () => {
 
     // Simulate API call
     try {
-      const response = await fetch(`https://ghana-muslim-mission.onrender.com/api/auth/restPassword?email=${email}&token=${token}`, {
+      const response = await fetch(`https://ghana-muslim-mission.onrender.com/api/auth/restPassword/?email=${email}&token=${token}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
