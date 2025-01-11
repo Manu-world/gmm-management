@@ -38,10 +38,10 @@ const LoginPage = () => {
 
 
       // Redirect based on user role
-      if (data.data.role === 'user') {
-        navigate('/dashboard');
-      } else {
+      if (data.data.role === 'admin') {
         navigate('/admin');
+      } else {
+        navigate('/dashboard');
       }
       // Handle successful login (e.g., redirect, etc.)
     } catch (error) {
