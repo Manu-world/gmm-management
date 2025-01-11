@@ -38,7 +38,7 @@ const LoginPage = () => {
 
 
       // Redirect based on user role
-      if (data.data.role === 'user') {
+      if (data.data.role === 'Member') {
         navigate('/dashboard');
       } else {
         navigate('/admin');
