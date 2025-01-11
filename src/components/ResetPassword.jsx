@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Lock, CheckCircle, XCircle } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
+import { useLocation } from 'react-router-dom';
 
 const PasswordReset = () => {
   const [password, setPassword] = useState('');
@@ -10,6 +11,16 @@ const PasswordReset = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [email, setEmail] = useState('');
+  const [token, setToken] = useState('');
+
+  // Get email and token from URL parameters
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setEmail(params.get('email'));
+    setToken(params.get('token'));
+  }, [location]);
 
   // Password validation criteria
   const hasMinLength = password.length >= 8;
@@ -40,9 +51,32 @@ const PasswordReset = () => {
 
     setIsSubmitting(true);
     
+    // Prepare form data
+    const formData = {
+      email,
+      token,
+      password,
+      confirmPassword,
+    };
+
     // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await fetch(`https://ghana-muslim-mission.onrender.com/api/auth/restPassword?email=${email}&token=${token}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password,
+          confirmPassword,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
       setSuccess(true);
     } catch (err) {
       setError('An error occurred. Please try again.');

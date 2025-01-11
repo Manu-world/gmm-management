@@ -1,16 +1,50 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import logo from "../assets/logo.png"
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // Handle login logic here
-    console.log('Login attempted with:', { email, password });
+    try {
+      const response = await fetch('https://ghana-muslim-mission.onrender.com/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials:"include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+
+      const data = await response.json();
+      console.log('Login successful:', data);
+      login(data.data.role);
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem("user", data.data)
+
+
+      // Redirect based on user role
+      if (data.data.role === 'user') {
+        navigate('/dashboard');
+      } else {
+        navigate('/admin');
+      }
+      // Handle successful login (e.g., redirect, etc.)
+    } catch (error) {
+      console.error('Error during login:', error);
+    }
   };
 
   return (
@@ -96,6 +130,7 @@ const LoginPage = () => {
             {/* Submit Button */}
             <button
               type="submit"
+              onClick={handleSubmit}
               className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-200 transition-colors duration-300 font-medium"
             >
               Sign In

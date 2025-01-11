@@ -12,16 +12,17 @@ const CreateUserForm = ({ onClose }) => {
       occupation: '',
       status: 'Active',
       profilePicture: null,
+      role: 'Member',
     });
 
     const membersList = useMemo(() => [
         { 
           id: 1, 
-          name: 'Kwame Mensah', 
+          name: 'Ali Mohammed',
           region: 'Greater Accra', 
           status: 'Active', 
           duesPaid: true,
-          email: 'kwame@example.com',
+          email: 'ali@example.com',
           phone: '+233 24 123 4567',
           occupation: 'Teacher',
           memberSince: '2022-03-15',
@@ -34,11 +35,11 @@ const CreateUserForm = ({ onClose }) => {
         },
         { 
           id: 2, 
-          name: 'Ama Osei', 
+          name: 'Fatima Ibrahim',
           region: 'Ashanti', 
           status: 'Active', 
           duesPaid: false,
-          email: 'ama@example.com',
+          email: 'fatima@example.com',
           phone: '+233 24 234 5678',
           occupation: 'Nurse',
           memberSince: '2021-05-10',
@@ -49,11 +50,11 @@ const CreateUserForm = ({ onClose }) => {
         },
         { 
           id: 3, 
-          name: 'Kwesi Appiah', 
+          name: 'Omar Khan',
           region: 'Northern', 
           status: 'Inactive', 
           duesPaid: false,
-          email: 'kwesi@example.com',
+          email: 'omar@example.com',
           phone: '+233 24 345 6789',
           occupation: 'Engineer',
           memberSince: '2020-08-20',
@@ -62,11 +63,11 @@ const CreateUserForm = ({ onClose }) => {
         },
         { 
           id: 4, 
-          name: 'Akosua Boateng', 
+          name: 'Aisha Abdallah',
           region: 'Volta', 
           status: 'Active', 
           duesPaid: true,
-          email: 'akosua@example.com',
+          email: 'aisha@example.com',
           phone: '+233 24 456 7890',
           occupation: 'Accountant',
           memberSince: '2022-01-15',
@@ -77,11 +78,11 @@ const CreateUserForm = ({ onClose }) => {
         },
         { 
           id: 5, 
-          name: 'Kofi Mensah', 
+          name: 'Khalid Yusuf',
           region: 'Eastern', 
           status: 'Active', 
           duesPaid: true,
-          email: 'kofi@example.com',
+          email: 'khalid@example.com',
           phone: '+233 24 567 8901',
           occupation: 'Lawyer',
           memberSince: '2023-02-25',
@@ -126,18 +127,37 @@ const CreateUserForm = ({ onClose }) => {
       }
 
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Prepare data for API call using FormData
+        const formDataToSend = new FormData();
+        Object.keys(formData).forEach(key => {
+          formDataToSend.append(key, formData[key]);
+        });
+        formDataToSend.append('role', formData.role);
+        if (formData.profilePicture) {
+          formDataToSend.append('profilePicture', formData.profilePicture);
+        }
+
+        // Get the access token from localStorage
+        // const accessToken = localStorage.getItem('accessToken');
+        const accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NzdkM2QyYzZlNmUxZTQ0MDU2NGQ1YTUiLCJpYXQiOjE3MzY2MTg0MDEsImV4cCI6MTczNjYyMjAwMX0.Yr3zfeFvXc8Cqneq3HUv3rETlJtPDA19_qzQ7nhdGUo";
+
+        // Send POST request to the API endpoint with the access token in headers
+        const response = await fetch('https://ghana-muslim-mission.onrender.com/api/user/create', {
+          method: 'POST',
+          // credentials: "include",
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            // 'Content-Type': 'multipart/form-data'
+          },
+          body: formDataToSend,
+        });
         
-        // Create new member object
-        const newMember = {
-          id: Date.now(), // temporary ID generation
-          ...formData,
-          profilePicture: formData.profilePicture ? await getBase64(formData.profilePicture) : null,
-          status: formData.status || 'Active',
-          duesPaid: false,
-          payments: []
-        };
+        console.log("createform response: ", response)
+        if (!response.ok) {
+          throw new Error('Failed to create user');
+        }
+
+        const newMember = await response.json(); 
 
         // Add to members list (in real app, this would be an API call)
         setMembers(prev => [...prev, newMember]);
@@ -288,6 +308,26 @@ const CreateUserForm = ({ onClose }) => {
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">
+              Role <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                formErrors.role ? 'border-red-500' : 'border-gray-300'
+              }`}
+            >
+              <option value="Member">Member</option>
+              <option value="Admin">Admin</option>
+            </select>
+            {formErrors.role && (
+              <p className="text-sm text-red-500">{formErrors.role}</p>
+            )}
           </div>
         </div>
 
