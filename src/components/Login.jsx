@@ -12,10 +12,12 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
 
   const handleSubmit = async (e) => {
+    console.log("hello world ");
+    
     e.preventDefault();
     // Handle login logic here
     try {
-      const response = await fetch('https://ghana-muslim-mission.onrender.com/api/auth/login', {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
