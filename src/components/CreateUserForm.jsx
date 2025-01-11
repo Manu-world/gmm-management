@@ -68,7 +68,7 @@ const CreateUserForm = ({ onClose }) => {
     }
     const accessToken = localStorage.getItem('accessToken');
     try {
-      const response = await fetch("http://localhost:5000/api/user/create", {
+      const response = await fetch("https://ghana-muslim-mission.onrender.com/api/user/create", {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
