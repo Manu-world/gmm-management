@@ -47,11 +47,11 @@ const Dashboard = () => {
   const membersList = useMemo(() => [
     { 
       id: 1, 
-      name: 'Kwame Mensah', 
+      name: 'Ali Mohammed',
       region: 'Greater Accra', 
       status: 'Active', 
       duesPaid: true,
-      email: 'kwame@example.com',
+      email: 'ali@example.com',
       phone: '+233 24 123 4567',
       occupation: 'Teacher',
       memberSince: '2022-03-15',
@@ -64,11 +64,11 @@ const Dashboard = () => {
     },
     { 
       id: 2, 
-      name: 'Ama Osei', 
+      name: 'Fatima Ibrahim',
       region: 'Ashanti', 
       status: 'Active', 
       duesPaid: false,
-      email: 'ama@example.com',
+      email: 'fatima@example.com',
       phone: '+233 24 234 5678',
       occupation: 'Nurse',
       memberSince: '2021-05-10',
@@ -76,51 +76,8 @@ const Dashboard = () => {
       payments: [
         { id: 1, date: '2023-10-01', amount: 50, status: 'Unpaid' },
       ]
-    },
-    { 
-      id: 3, 
-      name: 'Kwesi Appiah', 
-      region: 'Northern', 
-      status: 'Inactive', 
-      duesPaid: false,
-      email: 'kwesi@example.com',
-      phone: '+233 24 345 6789',
-      occupation: 'Engineer',
-      memberSince: '2020-08-20',
-      profilePicture: null,
-      payments: []
-    },
-    { 
-      id: 4, 
-      name: 'Akosua Boateng', 
-      region: 'Volta', 
-      status: 'Active', 
-      duesPaid: true,
-      email: 'akosua@example.com',
-      phone: '+233 24 456 7890',
-      occupation: 'Accountant',
-      memberSince: '2022-01-15',
-      profilePicture: null,
-      payments: [
-        { id: 1, date: '2024-01-01', amount: 50, status: 'Paid' },
-      ]
-    },
-    { 
-      id: 5, 
-      name: 'Kofi Mensah', 
-      region: 'Eastern', 
-      status: 'Active', 
-      duesPaid: true,
-      email: 'kofi@example.com',
-      phone: '+233 24 567 8901',
-      occupation: 'Lawyer',
-      memberSince: '2023-02-25',
-      profilePicture: null,
-      payments: [
-        { id: 1, date: '2024-01-01', amount: 50, status: 'Paid' },
-      ]
-    },
-    // ... other members
+    }
+    
   ], []);
 
   const [members, setMembers] = useState(membersList);

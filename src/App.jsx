@@ -20,6 +20,7 @@ const App = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/set_password" element={<PasswordReset />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/admin/*" element={<AdminDashboard />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
           {/* Protected admin routes */}
