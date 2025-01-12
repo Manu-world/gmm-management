@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { Edit, Save, Upload } from 'lucide-react';
+import { Edit, Save, Upload, History, CreditCard } from 'lucide-react';
 import Skeleton from './ui/skeleton';
 import { QRCodeSVG } from 'qrcode.react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { User, MapPin, Calendar, Phone, Briefcase, Mail, ChevronRight } from 'lucide-react';
-
+import ActionButton from './ActionButton';
+import logo from "../assets/logo.png"
 const ProfilePicture = ({ user, size = "default", editable = false, onImageChange, isLoading }) => {
   const sizeClasses = {
     small: "h-10 w-10 text-base",
@@ -66,11 +68,10 @@ const ProfilePicture = ({ user, size = "default", editable = false, onImageChang
   );
 };
 
-const MembershipCard = ({ user }) => {
-  // import logo from "../assets/logo.png"
+const MembershipCard = ({ user, className = "" }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const cardStyle = {
-    backgroundImage: 'url(../assets/logo.png)',
+    backgroundImage: `url(${logo})`,
     backgroundSize: '80%',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
@@ -153,12 +154,71 @@ const UserDetails = ({ label, value, icon: Icon }) => (
   </div>
 );
 
+const EditProfileDialog = ({ isOpen, onClose, userData, onSave, isLoading }) => {
+  const [editedData, setEditedData] = useState(userData);
+
+  useEffect(() => {
+    setEditedData(userData);
+  }, [userData]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Edit Profile</DialogTitle>
+        </DialogHeader>
+        <div className="mt-4 space-y-6">
+          <div className="flex justify-center">
+            <ProfilePicture 
+              user={editedData} 
+              size="large" 
+              editable={true}
+              onImageChange={(image) => setEditedData(prev => ({...prev, profilePic: image}))}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { label: "Full Name", key: "name" },
+              { label: "Email", key: "email", type: "email" },
+              { label: "Phone", key: "phone", type: "tel" },
+              { label: "Region", key: "region" },
+              { label: "Occupation", key: "occupation" }
+            ].map(field => (
+              <div key={field.key} className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">{field.label}</label>
+                <input
+                  type={field.type || "text"}
+                  value={editedData?.[field.key] || ''}
+                  onChange={e => setEditedData(prev => ({...prev, [field.key]: e.target.value}))}
+                  className="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => onSave(editedData)}
+              disabled={isLoading}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+            >
+              {isLoading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const UserDashboard = () => {
   const queryClient = useQueryClient();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedData, setEditedData] = useState(null);
-  const [showRecordPaymentModal, setShowRecordPaymentModal] = useState(false);
-
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { data: userData, isLoading, isError, error } = useQuery({
     queryKey: ['userData'],
     queryFn: async () => {
@@ -172,13 +232,6 @@ const UserDashboard = () => {
     },
   });
 
-  // Set editedData whenever userData changes
-  useEffect(() => {
-    if (userData) {
-      setEditedData(userData);
-    }
-  }, [userData]);
-
   const updateProfileMutation = useMutation({
     mutationFn: async (updatedData) => {
       const token = localStorage.getItem('accessToken');
@@ -191,15 +244,9 @@ const UserDashboard = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['userData']);
-      setIsEditing(false);
+      setIsEditDialogOpen(false);
     },
   });
-
-  const handleSaveProfile = () => {
-    if (editedData) {
-      updateProfileMutation.mutate(editedData);
-    }
-  };
 
   if (isError) {
     return (
@@ -215,29 +262,44 @@ const UserDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="bg-white p-6 rounded-xl shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-50 rounded-full">
+                <User className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Member ID</p>
+                <h1 className="text-2xl font-bold text-gray-900">{'GMM100125'}</h1>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+              
+              <ActionButton 
+                icon={Edit}
+                label="Edit Profile"
+                onClick={() => setIsEditDialogOpen(true)}
+              />
+            </div>
+          </div>
+        </div>
         
         {isLoading ? (
-          <div className="space-y-6">
-            <Skeleton className="h-56 w-96" />
+          <div className="space-y-8">
+            <Skeleton className="h-64 w-full max-w-[400px]" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
+              {[...Array(3)].map((_, i) => (
                 <Skeleton key={i} className="h-24 w-full" />
               ))}
             </div>
           </div>
         ) : (
           <>
-            <div className="flex flex-col md:flex-row gap-8">
-              {/* Membership Card Section */}
-              <div className="md:w-96">
-                <MembershipCard user={userData} />
-              </div>
-
-              {/* User Details Grid */}
-              <div className="flex-1">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex flex-col lg:flex-row gap-8">
+              <MembershipCard user={userData} className="lg:sticky lg:top-6" />
+              <div className="flex-1 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   <UserDetails 
                     label="Email"
                     value={userData?.email}
@@ -253,50 +315,38 @@ const UserDashboard = () => {
                     value={userData?.occupation}
                     icon={Briefcase}
                   />
-                  <UserDetails 
-                    label="Region"
-                    value={userData?.region}
-                    icon={MapPin}
-                  />
-                  <UserDetails 
-                    label="Member Since"
-                    value={new Date(userData?.createdAt).toLocaleDateString()}
-                    icon={Calendar}
-                  />
-                  <UserDetails 
-                    label="Member ID"
-                    value="GMM100125"
-                    icon={User}
-                  />
                 </div>
               </div>
             </div>
-
-            {/* Edit Profile Button */}
-            {!isLoading && (
-              <button
-                onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)}
-                className="mt-8 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                disabled={updateProfileMutation.isPending}
-              >
-                {isEditing ? (
-                  <>
-                    <Save className="w-4 h-4" />
-                    {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
-                  </>
-                ) : (
-                  <>
-                    <Edit className="w-4 h-4" />
-                    Edit Profile
-                  </>
-                )}
-              </button>
-            )}
+            
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+              <ActionButton 
+                icon={History}
+                label="Payment History"
+                variant="secondary"
+                onClick={() => {/* Handle payment history */}}
+              />
+              <ActionButton 
+                icon={CreditCard}
+                label="Make Payment"
+              />
+            </div>
+            
+            <EditProfileDialog 
+              isOpen={isEditDialogOpen}
+              onClose={() => setIsEditDialogOpen(false)}
+              userData={userData}
+              onSave={(data) => {
+                updateProfileMutation.mutate(data);
+                setIsEditDialogOpen(false);
+              }}
+              isLoading={updateProfileMutation.isPending}
+            />
           </>
         )}
 
         {updateProfileMutation.isError && (
-          <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
             Failed to update profile: {updateProfileMutation.error.message}
           </div>
         )}
