@@ -30,6 +30,8 @@ import PaymentTrackingModal from './PaymentTrackingModal';
 import { useAuth } from '../context/AuthContext';
 import { AnimatedStats, AnimatedCard, SkeletonLoader } from './AnimatedStats';
 import { motion } from 'framer-motion';
+import CreateMemberForm from './CreateUserForm';
+import CreateUserModal from './CreateUserModal';
 
 const Dashboard = () => {
   const [selectedRegion, setSelectedRegion] = useState('All Regions');
@@ -42,6 +44,7 @@ const Dashboard = () => {
   const [members, setMembers] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
   const [showFilters, setShowFilters] = useState(false);
+
 
   const regions = ['All Regions', 'Greater Accra', 'Ashanti', 'Northern', 'Volta', 'Eastern', 'Western'];
 
@@ -236,10 +239,14 @@ const Dashboard = () => {
                     />
                     <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                   </div>
-                  <button  onClick={() => setShowCreateModal(true)} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                  <button 
+                    onClick={() => setShowCreateModal(true)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                  >
                     <Plus className="w-4 h-4" />
                     Add Member
                   </button>
+                  
                 </div>
               </div>
               
@@ -332,6 +339,22 @@ const Dashboard = () => {
               </table>
             </div>
           </div>
+
+          {/* Add CreateMemberForm modal */}
+
+          
+        {/* </Tabs> */}
+      
+        {showCreateModal && (
+    <CreateUserModal
+    isOpen={showCreateModal}
+    onClose={() => setShowCreateModal(false)}
+    onSuccess={(newMember) => {
+      setMembers(prev => [...prev, formatMemberData([newMember])[0]]);
+      // Show success notification if desired
+    }}
+  />
+)}
         </div>
       </main>
     </div>

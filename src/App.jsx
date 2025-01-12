@@ -11,6 +11,7 @@ import PasswordReset from './components/ResetPassword';
 import AdminDashboard from './components/AdminDashboard';
 import UserDashboard from './components/UserDashboard';
 import UnauthorizedPage from './components/UnauthorizedPage';
+import ContactForm from "./components/Contact"
 
 const queryClient = new QueryClient();
 
@@ -24,7 +25,7 @@ const App = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/set_password/*" element={<PasswordReset />} />
             <Route path="/login" element={<LoginPage />} />
-            {/* <Route path="/admin/*" element={<AdminDashboard />} /> */}
+            <Route path="/chat_admin" element={<ContactForm />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* Protected admin routes */}
