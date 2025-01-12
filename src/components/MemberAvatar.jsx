@@ -8,6 +8,7 @@ const MemberAvatar = ({ member, size = "default" }) => {
     };
   
     const getInitials = (name) => {
+      if (!name) return '';
       return name.split(' ').map(n => n[0]).join('');
     };
   
@@ -16,6 +17,7 @@ const MemberAvatar = ({ member, size = "default" }) => {
         member.profilePicture ? 'bg-transparent' : 'bg-green-100'
       }`}>
         {member.profilePicture ? (
+          
           <img
             src={member.profilePicture}
             alt={member.name}

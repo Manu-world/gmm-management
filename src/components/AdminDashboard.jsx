@@ -1,5 +1,9 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Bell, Users, UserCircle, DollarSign, Map, ChevronDown, Search, Plus, X, Calendar, CreditCard, AlertCircle, Upload, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { 
+  Bell, Users, UserCircle, DollarSign, Map, Search,
+  Plus, Edit, Trash2, Calendar, CreditCard, ChevronDown,
+  ArrowUp, ArrowDown, Filter, Download
+} from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -24,91 +28,130 @@ import UserProfileForm from './UserProfileForm';
 import CreateUserForm from './CreateUserForm'
 import PaymentTrackingModal from './PaymentTrackingModal';
 import { useAuth } from '../context/AuthContext';
+import { AnimatedStats, AnimatedCard, SkeletonLoader } from './AnimatedStats';
+import { motion } from 'framer-motion';
 
 const Dashboard = () => {
   const [selectedRegion, setSelectedRegion] = useState('All Regions');
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('directory');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
-  const [formErrors, setFormErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showRecordPaymentModal, setShowRecordPaymentModal] = useState(false);
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const [members, setMembers] = useState([]);
+  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+  const [showFilters, setShowFilters] = useState(false);
 
   const regions = ['All Regions', 'Greater Accra', 'Ashanti', 'Northern', 'Volta', 'Eastern', 'Western'];
-  
-  const addMember = (newMember) => {
-    setMembers(prevMembers => [...prevMembers, newMember]);
+
+  useEffect(() => {
+    fetchMembers();
+  }, []);
+
+  const fetchMembers = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('https://ghana-muslim-mission.onrender.com/api/user/', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      setMembers(formatMemberData(data.data));
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error:', error);
+      setIsLoading(false);
+    }
   };
 
-  const membersList = useMemo(() => [
-    { 
-      id: 1, 
-      name: 'Ali Mohammed',
-      region: 'Greater Accra', 
-      status: 'Active', 
-      duesPaid: true,
-      email: 'ali@example.com',
-      phone: '+233 24 123 4567',
-      occupation: 'Teacher',
-      memberSince: '2022-03-15',
-      profilePicture: null,
-      payments: [
-        { id: 1, date: '2024-01-01', amount: 50, status: 'Paid' },
-        { id: 2, date: '2023-12-01', amount: 50, status: 'Paid' },
-        { id: 3, date: '2023-11-01', amount: 50, status: 'Paid' },
-      ]
-    },
-    { 
-      id: 2, 
-      name: 'Fatima Ibrahim',
-      region: 'Ashanti', 
-      status: 'Active', 
-      duesPaid: false,
-      email: 'fatima@example.com',
-      phone: '+233 24 234 5678',
-      occupation: 'Nurse',
-      memberSince: '2021-05-10',
-      profilePicture: null,    
-      payments: [
-        { id: 1, date: '2023-10-01', amount: 50, status: 'Unpaid' },
-      ]
-    }
-    
-  ], []);
-
-  const [members, setMembers] = useState(membersList);
+  const admin_profile = JSON.parse(localStorage.getItem("user"))
+  console.log("admin: ", admin_profile)
+  const formatMemberData = (data) => {
+    return data.map(member => ({
+      id: member._id,
+      name: member.name,
+      region: member.region,
+      status: member.status,
+      duesPaid: member.isVerified,
+      email: member.email,
+      phone: member.phone,
+      occupation: member.occupation,
+      memberSince: member.createdAt?.split('T')[0] || 'N/A',
+      profilePicture: member.profilePic,
+      payments: member.payments || []
+    }));
+  };
 
   const filteredMembers = useMemo(() => {
     return members.filter(member => {
       const matchesRegion = selectedRegion === 'All Regions' || member.region === selectedRegion;
-      const matchesSearch = searchTerm === '' || 
-        member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.phone.toLowerCase().includes(searchTerm.toLowerCase());
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm || 
+        member.name.toLowerCase().includes(searchLower) ||
+        member.email.toLowerCase().includes(searchLower) ||
+        member.phone.toLowerCase().includes(searchLower);
       return matchesRegion && matchesSearch;
+    }).sort((a, b) => {
+      const direction = sortConfig.direction === 'asc' ? 1 : -1;
+      return a[sortConfig.key] > b[sortConfig.key] ? direction : -direction;
     });
-  }, [members, selectedRegion, searchTerm]);
+  }, [members, selectedRegion, searchTerm, sortConfig]);
 
-  
+  const stats = {
+    totalMembers: members.length,
+    activeMembersCount: members.filter(m => m.status === 'Active').length,
+    totalDues: members.reduce((acc, m) => acc + (m.payments?.reduce((sum, p) => sum + p.amount, 0) || 0), 0),
+    duesCollectionRate: ((members.filter(m => m.duesPaid).length / members.length) * 100) || 0
+  };
+
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-green-700 text-white">
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100">
+      {/* Top Navigation */}
+      <nav className="bg-white border-b border-gray-200 fixed w-full z-10 top-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <span className="font-bold text-xl">GhanaAssoc</span>
+            <div className="flex items-center gap-8">
+              <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+                Admin Portal
+              </span>
+              <div className="hidden md:flex space-x-6">
+                {['Overview', 'Members', 'Analytics', 'Settings'].map(item => (
+                  <button 
+                    key={item}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors
+                      ${activeTab === item.toLowerCase() 
+                        ? 'text-green-600 bg-green-50' 
+                        : 'text-gray-600 hover:text-green-600 hover:bg-gray-50'}`}
+                    onClick={() => setActiveTab(item.toLowerCase())}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <Bell className="w-5 h-5 cursor-pointer hover:text-green-200" />
-              <div className="flex items-center gap-2 cursor-pointer hover:text-green-200">
-                <UserCircle className="w-6 h-6" />
-                <span>Admin</span>
+            
+            <div className="flex items-center gap-6">
+              <button className="p-2 rounded-full hover:bg-gray-100 transition-colors relative">
+                <Bell className="w-5 h-5 text-gray-600" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+              <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-100 p-2 rounded-full transition-colors">
+                <img 
+                  src={admin_profile.profilePic}
+                  alt="Admin"
+                  className="w-8 h-8 rounded-full border-2 border-green-500"
+                />
+                <span className="font-medium text-gray-700">{admin_profile? admin_profile.name.split(" ")[0]:"Admin"}</span>
               </div>
             </div>
           </div>
@@ -116,298 +159,181 @@ const Dashboard = () => {
       </nav>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <button 
-          className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition-colors w-full md:w-auto"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <Plus className="w-4 h-4" />
-          Add New Member
-        </button>
+      <main className="pt-20 pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {[
+              { 
+                title: 'Total Members',
+                value: stats.totalMembers,
+                icon: Users,
+                color: 'green',
+                trend: '+5.2%'
+              },
+              {
+                title: 'Active Members',
+                value: stats.activeMembersCount,
+                icon: UserCircle,
+                color: 'green',
+                trend: '+3.1%'
+              },
+              {
+                title: 'Total Dues',
+                value: `₵${stats.totalDues.toLocaleString()}`,
+                icon: DollarSign,
+                color: 'green',
+                trend: '+12.5%'
+              },
+              {
+                title: 'Collection Rate',
+                value: `${stats.duesCollectionRate.toFixed(1)}%`,
+                icon: Map,
+                color: 'green',
+                trend: '+2.4%'
+              }
+            ].map((stat, idx) => (
+              <div 
+                key={idx}
+                className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-3 rounded-lg bg-${stat.color}-100`}>
+                    <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
+                  </div>
+                  <div className={`flex items-center gap-1 text-sm ${
+                    stat.trend.startsWith('+') ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {stat.trend.startsWith('+') ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                    {stat.trend}
+                  </div>
+                </div>
+                <h3 className="text-gray-500 text-sm font-medium">{stat.title}</h3>
+                <p className="text-2xl font-bold mt-1">{stat.value}</p>
+              </div>
+            ))}
+          </div>
 
-        <Tabs defaultValue="directory" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
-            <TabsTrigger value="directory">Directory</TabsTrigger>
-            <TabsTrigger value="dues">Dues Tracking</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="directory">
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Total Members
-                  </CardTitle>
-                  <Users className="w-4 h-4 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">2,534</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Dues Collection
-                  </CardTitle>
-                  <DollarSign className="w-4 h-4 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">₵25,340</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">
-                    Active Regions
-                  </CardTitle>
-                  <Map className="w-4 h-4 text-green-600" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">16</div>
-                </CardContent>
-              </Card>
+          {/* Members Table Section */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <h2 className="text-xl font-semibold text-gray-800">Members Directory</h2>
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                  <button 
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+                  >
+                    <Filter className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <div className="relative flex-1 md:w-64">
+                    <input
+                      type="text"
+                      placeholder="Search members..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-green-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    />
+                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                  </div>
+                  <button  onClick={() => setShowCreateModal(true)} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    Add Member
+                  </button>
+                </div>
+              </div>
+              
+              {showFilters && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg flex flex-wrap gap-4">
+                  <select 
+                    value={selectedRegion}
+                    onChange={(e) => setSelectedRegion(e.target.value)}
+                    className="px-3 py-2 border border-green-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    {regions.map(region => (
+                      <option key={region} value={region}>{region}</option>
+                    ))}
+                  </select>
+                  <button className="px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors flex items-center gap-2">
+                    <Download className="w-4 h-4" />
+                    Export
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Members Table */}
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div>
-                    <CardTitle>Members Directory</CardTitle>
-                    <CardDescription>Manage association members and their dues status</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-4 w-full md:w-auto">
-                    <div className="relative">
-                      <select 
-                        value={selectedRegion}
-                        onChange={(e) => setSelectedRegion(e.target.value)}
-                        className="appearance-none bg-white border border-gray-300 rounded-lg py-2 px-4 pr-8 leading-tight focus:outline-none focus:border-green-500"
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {['Name', 'Region', 'Status', 'Last Payment', 'Actions'].map(header => (
+                      <th 
+                        key={header}
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={() => handleSort(header.toLowerCase())}
                       >
-                        {regions.map(region => (
-                          <option key={region} value={region}>{region}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-2 top-3 w-4 h-4 text-gray-400" />
-                    </div>
-                    <div className="relative flex-1 md:w-64">
-                      <input
-                        type="text"
-                        placeholder="Search members..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
-                      />
-                      <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dues</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredMembers.map(member => (
-                        <tr key={member.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <MemberAvatar member={member} />
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">{member.name}</div>
-                                <div className="text-sm text-gray-500">{member.email}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {member.region}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              member.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {member.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span 
-                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer ${
-                                member.duesPaid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}
-                              onClick={() => {
-                                setSelectedUser(member);
-                                setShowPaymentModal(true)
-                              }}
-                            >
-                              {member.duesPaid ? 'Paid' : 'Unpaid'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <button 
-                              className="text-green-600 hover:text-green-900"
-                              onClick={() => {
-                                setSelectedUser(member);
-                                setShowProfileModal(true);
-                            }}
-                            >
-                              Edit
-                            </button>
-                            <span className="mx-2">|</span>
-                            <button className="text-red-600 hover:text-red-900">Delete</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="dues">
-            <Card>
-              <CardHeader>
-                <CardTitle>Dues Overview</CardTitle>
-                <CardDescription>Monthly dues tracking and payment status</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-8">
-                  {/* Monthly Overview */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-green-50 p-6 rounded-lg">
-                      <h3 className="text-lg font-medium text-green-700">This Month</h3>
-                      <div className="mt-2">
-                        <p className="text-3xl font-bold text-green-800">₵4,250</p>
-                        <p className="text-sm text-green-600">85 members paid</p>
-                      </div>
-                    </div>
-                    <div className="bg-yellow-50 p-6 rounded-lg">
-                      <h3 className="text-lg font-medium text-yellow-700">Outstanding</h3>
-                      <div className="mt-2">
-                        <p className="text-3xl font-bold text-yellow-800">₵750</p>
-                        <p className="text-sm text-yellow-600">15 members pending</p>
-                      </div>
-                    </div>
-                    <div className="bg-blue-50 p-6 rounded-lg">
-                      <h3 className="text-lg font-medium text-blue-700">Collection Rate</h3>
-                      <div className="mt-2">
-                        <p className="text-3xl font-bold text-blue-800">85%</p>
-                        <p className="text-sm text-blue-600">vs 82% last month</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Payment Calendar */}
-                  <div className="bg-white p-6 rounded-lg border">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium">Recent Payments</h3>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-gray-500" />
-                        <select className="border rounded-md px-3 py-1">
-                          <option>January 2024</option>
-                          <option>December 2023</option>
-                          <option>November 2023</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      {members[0].payments.map(payment => (
-                        <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                              <CreditCard className="w-5 h-5 text-green-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium">Monthly Dues</p>
-                              <p className="text-sm text-gray-500">{payment.date}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium">₵{payment.amount}</p>
-                            <p className="text-sm text-gray-500">Paid via Mobile Money</p>
+                        <div className="flex items-center gap-2">
+                          {header}
+                          {sortConfig.key === header.toLowerCase() && (
+                            sortConfig.direction === 'asc' ? 
+                              <ArrowUp className="w-4 h-4" /> : 
+                              <ArrowDown className="w-4 h-4" />
+                          )}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredMembers.map((member, idx) => (
+                    <tr 
+                      key={member.id}
+                      className="hover:bg-green-50 transition-colors group"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={member.profilePicture || "/api/placeholder/40/40"}
+                            alt={member.name}
+                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                          />
+                          <div>
+                            <div className="font-medium text-gray-900">{member.name}</div>
+                            <div className="text-sm text-gray-500">{member.email}</div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Create User Modal */}
-          <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create New Member</DialogTitle>
-                <DialogDescription>
-                  Add a new member to the association
-                </DialogDescription>
-              </DialogHeader>
-              <CreateUserForm onClose={() => setShowCreateModal(false)} />
-            </DialogContent>
-          </Dialog>
-        </Tabs>
-      </div>
-
-      {/* Profile Edit Modal */}
-      <Dialog open={showProfileModal} onOpenChange={setShowProfileModal}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Profile</DialogTitle>
-            <DialogDescription>
-              Update member information and preferences
-            </DialogDescription>
-          </DialogHeader>
-          {selectedUser && <UserProfileForm user={selectedUser} onClose={() => setShowProfileModal(false)} />}
-        </DialogContent>
-      </Dialog>
-
-      {/* Payment Tracking Modal */}
-      <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Payment History</DialogTitle>
-            <DialogDescription>
-              View and manage member payment history
-            </DialogDescription>
-          </DialogHeader>
-          {selectedUser && <PaymentTrackingModal user={selectedUser} onClose={() => setShowPaymentModal(false)} />}
-        </DialogContent>
-      </Dialog>
-
-      {/* Show Record Payment Modal */}
-      {showRecordPaymentModal && selectedUser && (
-        <RecordPaymentModal
-          user={selectedUser}
-          onClose={() => setShowRecordPaymentModal(false)}
-          onSuccess={(paymentData) => {
-            // Update the member's payment status
-            setMembers(prev => prev.map(member => 
-              member.id === selectedUser.id 
-                ? {
-                    ...member,
-                    duesPaid: true,
-                    payments: [...member.payments, {
-                      id: Date.now(),
-                      date: new Date().toISOString().split('T')[0],
-                      amount: parseFloat(paymentData.amount),
-                      status: 'Paid',
-                      reference: paymentData.reference,
-                      method: 'MTN Mobile Money'
-                    }]
-                  }
-                : member
-            ));
-          }}
-        />
-      )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{member.region}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 text-sm rounded-full ${
+                          member.status === 'Active' 
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {member.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {member.payments?.[0]?.date || 'No payments'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button className="p-1 rounded-lg hover:bg-green-100 transition-colors">
+                            <Edit className="w-4 h-4 text-green-600" />
+                          </button>
+                          <button className="p-1 rounded-lg hover:bg-red-100 transition-colors">
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };

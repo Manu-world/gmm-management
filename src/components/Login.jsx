@@ -32,9 +32,9 @@ const LoginPage = () => {
 
       const data = await response.json();
       console.log('Login successful:', data);
-      login(data.data.role);
       localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem("user", data.data)
+      localStorage.setItem("user", JSON.stringify(data.data))
+      login(data.data.role);
 
 
       // Redirect based on user role
