@@ -92,88 +92,8 @@ const CreateUserForm = ({ onClose }) => {
     }
   };
 
-  const membersList = useMemo(() => [
-    { 
-      id: 1, 
-      name: 'Ali Mohammed',
-      region: 'Greater Accra', 
-      status: 'Active', 
-      duesPaid: true,
-      email: 'ali@example.com',
-      phone: '+233 24 123 4567',
-      occupation: 'Teacher',
-      memberSince: '2022-03-15',
-      profilePicture: null,
-      payments: [
-        { id: 1, date: '2024-01-01', amount: 50, status: 'Paid' },
-        { id: 2, date: '2023-12-01', amount: 50, status: 'Paid' },
-        { id: 3, date: '2023-11-01', amount: 50, status: 'Paid' },
-      ]
-    },
-    { 
-      id: 2, 
-      name: 'Fatima Ibrahim',
-      region: 'Ashanti', 
-      status: 'Active', 
-      duesPaid: false,
-      email: 'fatima@example.com',
-      phone: '+233 24 234 5678',
-      occupation: 'Nurse',
-      memberSince: '2021-05-10',
-      profilePicture: null,    
-      payments: [
-        { id: 1, date: '2023-10-01', amount: 50, status: 'Unpaid' },
-      ]
-    },
-    { 
-      id: 3, 
-      name: 'Omar Khan',
-      region: 'Northern', 
-      status: 'Inactive', 
-      duesPaid: false,
-      email: 'omar@example.com',
-      phone: '+233 24 345 6789',
-      occupation: 'Engineer',
-      memberSince: '2020-08-20',
-      profilePicture: null,
-      payments: []
-    },
-    { 
-      id: 4, 
-      name: 'Aisha Abdallah',
-      region: 'Volta', 
-      status: 'Active', 
-      duesPaid: true,
-      email: 'aisha@example.com',
-      phone: '+233 24 456 7890',
-      occupation: 'Accountant',
-      memberSince: '2022-01-15',
-      profilePicture: null,
-      payments: [
-        { id: 1, date: '2024-01-01', amount: 50, status: 'Paid' },
-      ]
-    },
-    { 
-      id: 5, 
-      name: 'Khalid Yusuf',
-      region: 'Eastern', 
-      status: 'Active', 
-      duesPaid: true,
-      email: 'khalid@example.com',
-      phone: '+233 24 567 8901',
-      occupation: 'Lawyer',
-      memberSince: '2023-02-25',
-      profilePicture: null,
-      payments: [
-        { id: 1, date: '2024-01-01', amount: 50, status: 'Paid' },
-      ]
-    },
-    // ... other members
-  ], []);
-  const regions = ['All Regions', 'Greater Accra', 'Ashanti', 'Northern', 'Volta', 'Eastern', 'Western'];
-
   
-  const [members, setMembers] = useState(membersList);
+  const regions = ['All Regions', 'Greater Accra', 'Ashanti', 'Northern', 'Volta', 'Eastern', 'Western'];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
